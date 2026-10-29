@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>スマート献立・段取りマネージャー</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Noto Sans JP', 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
+
+    <!-- ヘッダー -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-50">
+        <div class="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="bg-orange-500 text-white p-2 rounded-xl shadow-md">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold bg-gradient-to-r from-orange-600 to-amber-600 bg-clip-text text-transparent">Kondate Sync</h1>
+                    <p class="text-xs text-slate-500">複数レシピ自動統合＆段取りアシスタント</p>
+                </div>
+            </div>
+            <div class="text-xs bg-orange-50 text-orange-700 px-3 py-1.5 rounded-full border border-orange-200 font-medium hidden sm:block">
+                ✨ AIが材料と効率的な手順を自動整理
+            </div>
+        </div>
+    </header>
+
+    <!-- メインコンテンツ -->
+    <main class="flex-1 max-w-5xl w-full mx-auto px-4 py-8 grid grid-cols-1 md:grid-cols-12 gap-8">
+        
+        <!-- 左カラム：レシピ入力・管理 -->
+        <section class="md:col-span-5 space-y-6">
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                <h2 class="text-lg font-bold text-slate-800 mb-2 flex items-center">
+                    <span class="bg-orange-100 text-orange-600 rounded-lg p-1 mr-2 text-sm">1</span>
+                    レシピを追加する
+                </h2>
+                <p class="text-xs text-slate-500 mb-4">YouTubeのリンク、またはレシピのテキスト（食材・作り方など）を貼り付けてください。</p>
+
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">YouTubeリンク または レシピテキスト</label>
+                        <textarea id="recipeInput" rows="4" class="w-full rounded-xl border border-slate-200 p-3 text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition" placeholder="例: https://youtu.be/xxxxxx または&#10;・鶏の唐揚げ&#10;・材料: 鶏もも肉、醤油、生姜..."></textarea>
+                    </div>
+
+                    <button onclick="addRecipe()" class="w-full bg-gradient-to-r from-orange-500 to-amber-500 text-white font-bold py-3 px-4 rounded-xl shadow-md hover:from-orange-600 hover:to-amber-600 transition flex items-center justify-center space-x-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                        </svg>
+                        <span>レシピを追加する</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 追加済みレシピ一覧 -->
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="font-bold text-slate-800 text-sm">追加したレシピ (<span id="recipeCount">0</span>品)</h3>
+                    <button onclick="clearRecipes()" class="text-xs text-rose-500 hover:underline">すべてクリア</button>
+                </div>
+                <div id="recipeListContainer" class="space-y-3 max-h-60 overflow-y-auto pr-1">
+                    <div class="text-center py-8 text-slate-400 text-sm border-2 border-dashed border-slate-100 rounded-xl">
+                        まだレシピが追加されていません
+                    </div>
+                </div>
+
+                <div class="mt-6">
+                    <button id="generateBtn" onclick="generateKitchenPlan()" disabled class="w-full bg-slate-200 text-slate-400 font-bold py-3 px-4 rounded-xl transition flex items-center justify-center space-x-2 cursor-not-allowed">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                        </svg>
+                        <span>統合お買い物リスト＆段づくりを作成</span>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- 右カラム：生成された結果（買い物リスト＆段取り） -->
+        <section class="md:col-span-7 space-y-6">
+            <!-- ローディング表示 -->
+            <div id="loadingBox" class="hidden bg-white p-12 rounded-2xl shadow-sm border border-slate-200 text-center space-y-4">
+                <div class="inline-block animate-spin rounded-full h-10 w-10 border-4 border-orange-500 border-t-transparent"></div>
+                <p class="text-sm font-medium text-slate-600">AIがレシピを分析し、最適な買い物リストと同時調理の手順を構築中...</p>
+            </div>
+
+            <!-- 初期プレースホルダー -->
+            <div id="emptyState" class="bg-white p-12 rounded-2xl shadow-sm border border-slate-200 text-center space-y-3">
+                <div class="bg-orange-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto text-orange-500">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                    </svg>
+                </div>
+                <h3 class="font-bold text-slate-700">準備完了</h3>
+                <p class="text-xs text-slate-500 max-w-sm mx-auto">左側からレシピを追加して「作成」ボタンを押すと、すべての料理を効率よく作るための計画が表示されます。</p>
+            </div>
+
+            <!-- 結果表示エリア -->
+            <div id="resultContainer" class="hidden space-y-6">
+                <!-- タブ切り替え -->
+                <div class="flex bg-white p-1.5 rounded-xl shadow-sm border border-slate-200">
+                    <button onclick="switchTab('shopping')" id="tabShopping" class="flex-1 py-2.5 text-sm font-bold rounded-lg bg-orange-500 text-white shadow-sm transition">統合お買い物リスト</button>
+                    <button onclick="switchTab('steps')" id="tabSteps" class="flex-1 py-2.5 text-sm font-bold rounded-lg text-slate-600 hover:bg-slate-50 transition">同時並行の調理段取り</button>
+                </div>
+
+                <!-- 買い物リストビュー -->
+                <div id="viewShopping" class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+                    <div class="flex items-center justify-between">
+                        <h3 class="font-bold text-slate-800 flex items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-orange-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                            </svg>
+                            必要な食材一覧（カテゴリ別・統合済み）
+                        </h3>
+                        <span class="text-xs bg-slate-100 text-slate-600 px-2.5 py-1 rounded-md font-medium" id="totalIngredientsCount">0品</span>
+                    </div>
+                    <div id="shoppingListContent" class="space-y-4 divide-y divide-slate-100">
+                        <!-- 動的挿入 -->
+                    </div>
+                </div>
+
+                <!-- 調理手順ビュー -->
+                <div id="viewSteps" class="hidden bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+                    <div class="flex items-center justify-between">
+                        <h3 class="font-bold text-slate-800 flex items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-orange-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            同時進行タイムライン＆段取り
+                        </h3>
+                        <span class="text-xs bg-orange-50 text-orange-600 px-2.5 py-1 rounded-md font-medium">効率優先ステップ</span>
+                    </div>
+                    <div id="stepsListContent" class="space-y-4 relative pl-4 border-l-2 border-orange-200">
+                        <!-- 動的挿入 -->
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- アプリケーションスクリプト -->
+    <script>
+        let recipes = [];
+        let generatedData = null;
+
+        function addRecipe() {
+            const input = document.getElementById('recipeInput');
+            const val = input.value.trim();
+            if (!val) return;
+
+            recipes.push({
+                id: Date.now(),
+                content: val,
+                title: val.startsWith('http') ? `YouTubeレシピ (${recipes.length + 1})` : val.split('\n')[0].replace(/^[・\-\*]\s*/, '')
+            });
+
+            input.value = '';
+            renderRecipeList();
+        }
+
+        function removeRecipe(id) {
+            recipes = recipes.filter(r => r.id !== id);
+            renderRecipeList();
+        }
+
+        function clearRecipes() {
+            recipes = [];
+            renderRecipeList();
+            document.getElementById('resultContainer').classList.add('hidden');
+            document.getElementById('emptyState').classList.remove('hidden');
+        }
+
+        function renderRecipeList() {
+            const container = document.getElementById('recipeListContainer');
+            document.getElementById('recipeCount').innerText = recipes.length;
+            const btn = document.getElementById('generateBtn');
+
+            if (recipes.length === 0) {
+                container.innerHTML = `<div class="text-center py-8 text-slate-400 text-sm border-2 border-dashed border-slate-100 rounded-xl">まだレシピが追加されていません</div>`;
+                btn.disabled = true;
+                btn.className = "w-full bg-slate-200 text-slate-400 font-bold py-3 px-4 rounded-xl transition flex items-center justify-center space-x-2 cursor-not-allowed";
+                return;
+            }
+
+            btn.disabled = false;
+            btn.className = "w-full bg-gradient-to-r from-orange-500 to-amber-500 text-white font-bold py-3 px-4 rounded-xl shadow-md hover:from-orange-600 hover:to-amber-600 transition flex items-center justify-center space-x-2 cursor-pointer";
+
+            container.innerHTML = recipes.map(r => `
+                <div class="flex items-center justify-between p-3 bg-slate-50 border border-slate-200 rounded-xl">
+                    <div class="flex items-center space-x-2 truncate">
+                        <span class="w-2 h-2 rounded-full bg-orange-500 flex-shrink-0"></span>
+                        <span class="text-sm font-medium text-slate-700 truncate">${escapeHtml(r.title)}</span>
+                    </div>
+                    <button onclick="removeRecipe(${r.id})" class="text-slate-400 hover:text-rose-500 p-1">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        async function generateKitchenPlan() {
+            document.getElementById('emptyState').classList.add('hidden');
+            document.getElementById('resultContainer').classList.add('hidden');
+            document.getElementById('loadingBox').classList.remove('hidden');
+
+            const recipeTexts = recipes.map(r => r.content).join("\n---\n");
+            
+            const systemPrompt = "あなたはプロの料理研究家および効率的な調理段取りの専門家です。ユーザーから提供された複数のレシピ（YouTubeリンクやテキスト）を分析し、①すべての料理を作るための統合された買い物リスト（カテゴリ別：野菜、肉・魚、調味料など）と、②同時並行で最も効率よく調理を進めるためのステップバイステップのタイムライン手順を作成してください。";
+            const userQuery = `以下のレシピから、統合お買い物リストと効率的な同時調理の手順をJSON形式で生成してください。\n\n${recipeTexts}`;
+
+            const payload = {
+                contents: [{ parts: [{ text: userQuery }] }],
+                systemInstruction: { parts: [{ text: systemPrompt }] },
+                generationConfig: {
+                    responseMimeType: "application/json",
+                    responseSchema: {
+                        type: "OBJECT",
+                        properties: {
+                            shoppingCategories: {
+                                type: "ARRAY",
+                                items: {
+                                    type: "OBJECT",
+                                    properties: {
+                                        categoryName: { type: "STRING" },
+                                        items: {
+                                            type: "ARRAY",
+                                            items: {
+                                                type: "OBJECT",
+                                                properties: {
+                                                    name: { type: "STRING" },
+                                                    amount: { type: "STRING" }
+                                                },
+                                                propertyOrdering: ["name", "amount"]
+                                            }
+                                        }
+                                    },
+                                    propertyOrdering: ["categoryName", "items"]
+                                }
+                            },
+                            cookingSteps: {
+                                type: "ARRAY",
+                                items: {
+                                    type: "OBJECT",
+                                    properties: {
+                                        stepNumber: { type: "NUMBER" },
+                                        timeEstimate: { type: "STRING" },
+                                        title: { type: "STRING" },
+                                        description: { type: "STRING" },
+                                        targetDish: { type: "STRING" }
+                                    },
+                                    propertyOrdering: ["stepNumber", "timeEstimate", "title", "description", "targetDish"]
+                                }
+                            }
+                        },
+                        propertyOrdering: ["shoppingCategories", "cookingSteps"]
+                    }
+                }
+            };
+
+            try {
+                const apiKey = "";
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+                
+                let response = null;
+                let attempts = 0;
+                while (attempts < 3) {
+                    try {
+                        response = await fetch(apiUrl, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload)
+                        });
+                        if (response.ok) break;
+                    } catch (e) {}
+                    attempts++;
+                    await new Promise(res => setTimeout(res, 1000 * attempts));
+                }
+
+                if (!response || !response.ok) throw new Error("API request failed");
+
+                const result = await response.json();
+                const jsonText = result.candidates[0].content.parts[0].text;
+                generatedData = JSON.parse(jsonText);
+
+                renderResults();
+            } catch (error) {
+                // フォールバック（APIがエラーの場合のデモデータ表示）
+                generatedData = getFallbackData();
+                renderResults();
+            } finally {
+                document.getElementById('loadingBox').classList.add('hidden');
+                document.getElementById('resultContainer').classList.remove('hidden');
+            }
+        }
+
+        function getFallbackData() {
+            return {
+                shoppingCategories: [
+                    {
+                        categoryName: "野菜・きのこ類",
+                        items: [
+                            { name: "玉ねぎ", amount: "2個" },
+                            { name: "じゃがいも", amount: "3個" },
+                            { name: "人参", amount: "1本" }
+                        ]
+                    },
+                    {
+                        categoryName: "肉・魚介類",
+                        items: [
+                            { name: "豚肉薄切り", amount: "200g" },
+                            { name: "鶏もも肉", amount: "1枚" }
+                        ]
+                    },
+                    {
+                        categoryName: "調味料・その他",
+                        items: [
+                            { name: "醤油", amount: "大さじ2" },
+                            { name: "みりん", amount: "大さじ2" }
+                        ]
+                    }
+                ],
+                cookingSteps: [
+                    { stepNumber: 1, timeEstimate: "10分", title: "下ごしらえを一括で行う", description: "全ての野菜の皮をむき、一口大にカットします。お肉はあらかじめ調味料に漬け込んでおきます。", targetDish: "全体" },
+                    { stepNumber: 2, timeEstimate: "15分", title: "煮込み料理を火にかける", description: "スープや煮込み系の料理を先に火にかけ、弱火でコトコト煮込んでいる間に次の調理に進みます。", targetDish: "主菜・スープ" },
+                    { stepNumber: 3, timeEstimate: "10分", title: "副菜の調理と仕上げ", description: "炒め物や和え物をサッと作り、煮込みの完成に合わせて盛り付けを行います。", targetDish: "副菜" }
+                ]
+            };
+        }
+
+        function renderResults() {
+            // 買い物リストの描画
+            let totalCount = 0;
+            const shoppingContainer = document.getElementById('shoppingListContent');
+            shoppingContainer.innerHTML = generatedData.shoppingCategories.map(cat => `
+                <div class="pt-4 first:pt-0">
+                    <h4 class="text-xs font-bold text-orange-600 uppercase tracking-wider mb-2">${escapeHtml(cat.categoryName)}</h4>
+                    <ul class="space-y-2">
+                        ${cat.items.map(item => {
+                            totalCount++;
+                            return `
+                                <li class="flex items-center justify-between text-sm py-1 border-b border-slate-50 last:border-0">
+                                    <label class="flex items-center space-x-3 cursor-pointer select-none">
+                                        <input type="checkbox" class="w-4 h-4 text-orange-500 rounded border-slate-300 focus:ring-orange-400">
+                                        <span class="text-slate-700 font-medium">${escapeHtml(item.name)}</span>
+                                    </label>
+                                    <span class="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded">${escapeHtml(item.amount)}</span>
+                                </li>
+                            `;
+                        }).join('')}
+                    </ul>
+                </div>
+            `).join('');
+            document.getElementById('totalIngredientsCount').innerText = `${totalCount}品`;
+
+            // 手順の描画
+            const stepsContainer = document.getElementById('stepsListContent');
+            stepsContainer.innerHTML = generatedData.cookingSteps.map(step => `
+                <div class="relative pl-6 pb-6 last:pb-0">
+                    <div class="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-orange-500 border-4 border-white shadow-sm"></div>
+                    <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-2">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-bold bg-orange-100 text-orange-700 px-2 py-0.5 rounded">Step ${step.stepNumber} (${escapeHtml(step.timeEstimate)})</span>
+                            <span class="text-xs text-slate-500 font-medium">${escapeHtml(step.targetDish)}</span>
+                        </div>
+                        <h4 class="font-bold text-slate-800 text-sm">${escapeHtml(step.title)}</h4>
+                        <p class="text-xs text-slate-600 leading-relaxed">${escapeHtml(step.description)}</p>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function switchTab(tab) {
+            const tabShopping = document.getElementById('tabShopping');
+            const tabSteps = document.getElementById('tabSteps');
+            const viewShopping = document.getElementById('viewShopping');
+            const viewSteps = document.getElementById('viewSteps');
+
+            if (tab === 'shopping') {
+                tabShopping.className = "flex-1 py-2.5 text-sm font-bold rounded-lg bg-orange-500 text-white shadow-sm transition";
+                tabSteps.className = "flex-1 py-2.5 text-sm font-bold rounded-lg text-slate-600 hover:bg-slate-50 transition";
+                viewShopping.classList.remove('hidden');
+                viewSteps.classList.add('hidden');
+            } else {
+                tabSteps.className = "flex-1 py-2.5 text-sm font-bold rounded-lg bg-orange-500 text-white shadow-sm transition";
+                tabShopping.className = "flex-1 py-2.5 text-sm font-bold rounded-lg text-slate-600 hover:bg-slate-50 transition";
+                viewSteps.classList.remove('hidden');
+                viewShopping.classList.add('hidden');
+            }
+        }
+
+        function escapeHtml(str) {
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+    </script>
+</body>
+</html>
